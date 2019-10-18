@@ -44,7 +44,7 @@ namespace {
   //     1: use median of similarities as preference
   //     2: use minimum of similarities as preference
   //     3: use min - (max - min) of similarities as preference
-  Graph* buildGraph(FILE* input, int prefType)
+  Graph* buildGraph(FILE* input, float prefType, bool debug)
   {
     Graph* graph = new Graph;
     fscanf(input, "%d", &graph->n);
@@ -72,9 +72,11 @@ namespace {
       double minValue = min_element(edges.begin(), edges.end())->s;
       double maxValue = max_element(edges.begin(), edges.end())->s;
       pref = 2*minValue - maxValue;
-    } else {
-      assert(false);      // invalid prefType
+    } else{
+      pref = prefType;
     }
+    if (debug){ printf("prefType: %f; preference value: %f \n", prefType, pref); }
+
     for (int i = 0; i < graph->n; ++i) {
       edges.push_back(Edge(i, i, pref));
     }
@@ -180,17 +182,19 @@ namespace {
 //           did not change for.
 // Returns:
 //   Array of examplars of corresponding data points.
-vector<int> affinityPropagation(FILE* input, int prefType, double damping, int maxit, int convit)
+vector<int> affinityPropagation(FILE* input, float prefType, double damping, int maxit, int convit, bool debug)
 {
   assert(0.499 < damping && damping < 1.0);
 
-  Graph* graph = buildGraph(input, prefType);
+  if (debug){ printf("%f \n", prefType);}
+  Graph* graph = buildGraph(input, prefType, debug);
   vector<int> examplar(graph->n, -1);
 
   for (int i = 0, nochange = 0; i < maxit && nochange < convit; ++i, ++nochange) {
     updateResponsibilities(graph, damping);
     updateAvailabilities(graph, damping);
     if (updateExamplars(graph, examplar)) { nochange = 0; }
+    if (debug && (i % 10 == 0)){ printf("iteration: %d \n", i);}
   }
   
   destroyGraph(graph);
